@@ -1,0 +1,4 @@
+node(N) :- edge(N, _).
+node(N) :- edge(_, N).
+edgeAttr(N1, N2, color, "#ff00ff") :- N2=7,edge(N1, N2).
+edgeAttr(N1, N2, color, "#ff00ff") :- N1=7,edge(N1, N2).

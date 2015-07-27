@@ -1,0 +1,114 @@
+<!doctype html>
+<!--
+  License: GPLv3, see LICENSE
+-->
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="description" content="ASP tools - Postprocess answer sets">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Postprocess answer sets</title>
+
+    <!-- Add to homescreen for Chrome on Android -->
+    <meta name="mobile-web-app-capable" content="yes">
+    <link rel="icon" sizes="192x192" href="images/touch/chrome-touch-icon-192x192.png">
+
+    <!-- Add to homescreen for Safari on iOS -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="apple-mobile-web-app-title" content="ASP tools">
+    <link rel="apple-touch-icon-precomposed" href="apple-touch-icon-precomposed.png">
+
+    <!-- Tile icon for Win8 (144x144 + tile color) -->
+    <meta name="msapplication-TileImage" content="images/touch/ms-touch-icon-144x144-precomposed.png">
+    <meta name="msapplication-TileColor" content="#3372DF">
+
+    <link href='https://fonts.googleapis.com/css?family=Roboto:regular,bold,italic,thin,light,bolditalic,black,medium&amp;lang=en' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto+Mono:400,700">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons"
+      rel="stylesheet">
+    <link rel="stylesheet" href="https://storage.googleapis.com/code.getmdl.io/1.0.1/material.cyan-teal.min.css" />
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <div class="asptools-layout mdl-layout mdl-layout--fixed-header mdl-js-layout mdl-color--grey-100">
+      <header class="asptools-header mdl-layout__header mdl-layout__header--scroll mdl-color--grey-100 mdl-color-text--grey-800">
+        <div class="mdl-layout__header-row">
+          <span class="mdl-layout-title">ASP tools</span>
+          <div class="mdl-layout-spacer"></div>
+        </div>
+      </header>
+      <div class="asptools-ribbon"></div>
+      <main class="asptools-main mdl-layout__content">
+        <div class="asptools-container mdl-grid">
+          <div class="mdl-cell mdl-cell--2-col mdl-cell--hide-tablet mdl-cell--hide-phone"></div>
+          <div class="asptools-content mdl-color--white mdl-shadow--4dp content mdl-color-text--grey-800 mdl-cell mdl-cell--8-col">
+            <div class="asptools-crumbs mdl-color-text--grey-500">
+              Postprocess ASP answer sets
+            </div>
+            <h3>Clasp/Clingo output</h3>
+
+            <form action="javascript:void(0);">
+              <div class="mdl-textfield mdl-js-textfield asptools-textfield">
+                <textarea class="mdl-textfield__input" type="text" rows= "10" id="taInputAnswersets" ></textarea>
+                <label class="mdl-textfield__label" for="taInputAnswersets">Paste clasp output here...</label>
+              </div>
+            </form>
+            <h3>ASP rules</h3>
+            <p>
+              These rules will be applied for each answer set separately.
+            </p>
+            <form action="javascript:void(0);">
+              <div class="mdl-textfield mdl-js-textfield asptools-textfield">
+                <textarea class="mdl-textfield__input" type="text" rows= "10" id="taInputRules" ></textarea>
+                <label class="mdl-textfield__label" for="taInputRules">
+                  node(N) :- cycle(node(N), _, _, _).<br>
+                  node(N) :- cycle(_, _, node(N), _).<br>
+                  edge(From, To) :- cycle(node(From), _, node(To), _).
+                </label>
+              </div>
+              <!-- Accent-colored raised button with ripple -->
+              <button class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect mdl-button--colored" onClick="runPostprocess(); return false;" id="btnRun" disabled>
+                Run
+              </button>
+            </form>
+            <h3>Result</h3>
+              <form action="javascript:void(0);">
+              <div class="mdl-textfield mdl-js-textfield asptools-textfield">
+                <textarea class="mdl-textfield__input" type="text" rows= "10" id="taOutput" ></textarea>
+                <label class="mdl-textfield__label" for="taOutput"></label>
+              </div>
+            </form>
+
+          </div>
+        </div>
+        <footer class="asptools-footer mdl-mini-footer">
+          <div class="mdl-mini-footer--left-section">
+            <ul class="mdl-mini-footer--link-list">
+              <li><a href="#">Help</a></li>
+              <li><a href="#">Privacy and Terms</a></li>
+              <li><a href="#">User Agreement</a></li>
+            </ul>
+          </div>
+        </footer>
+      </main>
+    </div>
+    <script src="https://storage.googleapis.com/code.getmdl.io/1.0.1/material.min.js"></script>
+    <script>
+      // global
+      var Module;
+    </script>
+    <script src="scripts/clingo-module.js"></script>
+    <script src="scripts/clingo.js" async></script>
+    <script src="scripts/postprocessParser.js" async></script>
+    <script>
+      function runPostprocess() {
+        var inputAS = document.getElementById("taInputAnswersets");
+        var outputElement = document.getElementById('taOutput');
+        var out = postprocessParser.parse(inputAS.value);
+        outputElement.value = out;
+      }
+    </script>
+  </body>
+</html>

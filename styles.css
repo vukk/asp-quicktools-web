@@ -1,0 +1,63 @@
+/*
+ * License: GPLv3, see LICENSE
+ */
+
+form {
+  font-family: "Roboto Mono", "Times New Roman";
+}
+
+.asptools-ribbon {
+  width: 100%;
+  height: 40vh;
+  background-color: #8C487E;
+  -webkit-flex-shrink: 0;
+      -ms-flex-negative: 0;
+          flex-shrink: 0;
+}
+
+.asptools-main {
+  margin-top: -35vh;
+  -webkit-flex-shrink: 0;
+      -ms-flex-negative: 0;
+          flex-shrink: 0;
+}
+
+.asptools-header .mdl-layout__header-row {
+  padding-left: 40px;
+}
+
+.asptools-container {
+  max-width: 1600px;
+  width: calc(100% - 16px);
+  margin: 0 auto;
+}
+
+.asptools-content {
+  border-radius: 2px;
+  padding: 80px 56px;
+  margin-bottom: 80px;
+}
+
+.asptools-textfield {
+  width: 100%;
+}
+
+.asptools-layout.is-small-screen .asptools-content {
+  padding: 40px 28px;
+}
+
+.asptools-content h3 {
+  margin-top: 48px;
+}
+
+.asptools-footer {
+  padding-left: 40px;
+  -webkit-flex-shrink: 0;
+      -ms-flex-negative: 0;
+          flex-shrink: 0;
+}
+
+.asptools-footer .mdl-mini-footer--link-list a {
+  font-size: 13px;
+}
+
