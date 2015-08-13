@@ -10,20 +10,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Postprocess answer sets</title>
 
-    <!-- Add to homescreen for Chrome on Android -->
-    <meta name="mobile-web-app-capable" content="yes">
-    <link rel="icon" sizes="192x192" href="images/touch/chrome-touch-icon-192x192.png">
-
-    <!-- Add to homescreen for Safari on iOS -->
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black">
-    <meta name="apple-mobile-web-app-title" content="ASP tools">
-    <link rel="apple-touch-icon-precomposed" href="apple-touch-icon-precomposed.png">
-
-    <!-- Tile icon for Win8 (144x144 + tile color) -->
-    <meta name="msapplication-TileImage" content="images/touch/ms-touch-icon-144x144-precomposed.png">
-    <meta name="msapplication-TileColor" content="#3372DF">
-
     <link href='https://fonts.googleapis.com/css?family=Roboto:regular,bold,italic,thin,light,bolditalic,black,medium&amp;lang=en' rel='stylesheet' type='text/css'>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto+Mono:400,700">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons"
@@ -49,27 +35,51 @@
             </div>
             <h3>Clasp/Clingo output</h3>
 
+            <label for="inputHiddenLog">
+              <div><button id="btnSelectLog" class="mdl-button mdl-js-button mdl-button--raised mdl-button--colored" style="pointer-events: none;">
+                <span>Select logfile</span>
+              </button></div>
+            </label>
+            <input hidden type="file" id="inputHiddenLog">
+
             <form action="javascript:void(0);">
-              <div class="mdl-textfield mdl-js-textfield asptools-textfield">
+              <div id="divInputAnswersets" class="mdl-textfield mdl-js-textfield asptools-textfield">
                 <textarea class="mdl-textfield__input" type="text" rows= "10" id="taInputAnswersets" ></textarea>
                 <label class="mdl-textfield__label" for="taInputAnswersets">Paste clasp output here...</label>
               </div>
             </form>
             <h3>ASP rules</h3>
+
+            <label for="inputHiddenScript">
+              <div><button id="btnSelectScript" class="mdl-button mdl-js-button mdl-button--raised mdl-button--colored"  style="pointer-events: none;">
+                <span>Select script</span>
+              </button></div>
+            </label>
+            <input hidden type="file" id="inputHiddenScript">
+
             <p>
               These rules will be applied for each answer set separately.
             </p>
+            <p>
+              All answer sets are made available by predicate <code>_as(Term,SequenceNum)</code>.
+              The current sequence number is defined by constant <code>asCurrent</code> and
+              the highest sequence number is defined by constant <code>asCount</code>.
+              <code>asCurrent</code> index starts from 1.
+            </p>
             <form action="javascript:void(0);">
-              <div class="mdl-textfield mdl-js-textfield asptools-textfield">
+              <div id="divInputRules" class="mdl-textfield mdl-js-textfield asptools-textfield">
                 <textarea class="mdl-textfield__input" type="text" rows= "10" id="taInputRules" ></textarea>
                 <label class="mdl-textfield__label" for="taInputRules">
-                  node(N) :- cycle(node(N), _, _, _).<br>
-                  node(N) :- cycle(_, _, node(N), _).<br>
+                  % EXAMPLE<br>
+                  % nodes from all models<br>
+                  node(N) :- _as(cycle(node(N), _, _, _),_).<br>
+                  node(N) :- _as(cycle(_, _, node(N), _),_).<br>
+                  % edges from current model<br>
                   edge(From, To) :- cycle(node(From), _, node(To), _).
                 </label>
               </div>
               <!-- Accent-colored raised button with ripple -->
-              <button class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect mdl-button--colored" onClick="runPostprocess(); return false;" id="btnRun" disabled>
+              <button class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect mdl-button--accent" onClick="runPostprocess(); return false;" id="btnRun" disabled>
                 Run
               </button>
             </form>
@@ -106,9 +116,48 @@
       function runPostprocess() {
         var inputAS = document.getElementById("taInputAnswersets");
         var outputElement = document.getElementById('taOutput');
+        // parser reads rules directly... ugly
         var out = postprocessParser.parse(inputAS.value);
         outputElement.value = out;
-      }
+      };
+
+      var inputHiddenLog = document.getElementById("inputHiddenLog");
+      inputHiddenLog.onchange = function(evt) {
+        readFile(evt.target.files[0], function(content) {
+          var input = document.getElementById("taInputAnswersets");
+          input.value = content;
+          var div = document.getElementById("divInputAnswersets");
+          div.className += " is-dirty";
+        });
+      };
+
+      var inputHiddenScript = document.getElementById("inputHiddenScript");
+      inputHiddenScript.onchange = function(evt) {
+        readFile(evt.target.files[0], function(content) {
+          var input = document.getElementById("taInputRules");
+          input.value = content;
+          var div = document.getElementById("divInputRules");
+          div.className += " is-dirty";
+        });
+      };
+
+      function readFile(file, callback) {
+        reader = new FileReader();
+        reader.onerror = function(evt) {
+          alert('File read error.');
+        };
+        reader.onabort = function(evt) {
+          alert('File read cancelled.');
+        };
+        reader.onloadend = function(evt) {
+          var reader = evt.target;
+          if (reader.readyState === FileReader.DONE) {
+            callback(reader.result);
+          }
+        };
+        reader.readAsText(file, 'UTF-8');
+      };
+
     </script>
   </body>
 </html>

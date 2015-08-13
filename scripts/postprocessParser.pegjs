@@ -57,7 +57,7 @@ start
       returnStr += skippedParts[i];
 
       // call clingo with answerset and all other answersets wrapped
-      var input = ["#const asCurrent = "+i, "#const asCount = "+modelCounter];
+      var input = ["#const asCurrent = "+(i+1), "#const asCount = "+modelCounter];
       Array.prototype.push.apply(input, allAnswerSets[i]);
       Array.prototype.push.apply(input, wrappedAnswerSets);
       console.log('inputting',input);
