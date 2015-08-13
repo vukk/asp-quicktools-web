@@ -1,19 +1,26 @@
 /*
- * peg.js potassco solver default text to json parser
- * TODO: cleanup by using $str, add E* to all the things... (even after \n maybe)
+ * peg.js post processing parser, clingo calls hacked in UGLY
+ * TODO: cleanup, add E* to all the things... (even after \n maybe)
  */
 
 /* initializer */
 
 {
+  var skippedParts = []; // text in between
+  var allAnswerSets = []; // array of answerset arrays
+  var wrappedAnswerSets = []; // array of wrapped terms as(Ans,ModelNum)
+  var modelCounter = 0;
+
   function clingoCall(facts) {
-    var options = "--outf=2";
+    var options = "--outf=2 --out-hide-aux";
     var inputElem = document.getElementById("taInputRules");
     var oldOutput = output; // save old one
     output = "";
     var inputStr = facts.join(". ") + ".\n" + inputElem.value;
+    //var inputStr = facts.join(". ") + ".\n";
     console.log("inputting: ", inputStr);
     Module.ccall('run', 'number', ['string', 'string'], [inputStr, options]);
+    //output = "{\"Call\":[{\"Witnesses\":[{\"Value\":[\"dev\"]}]}]}"
     console.log("output was: ", output);
     var outJSON = JSON.parse(output);
     var newAnswerset = outJSON["Call"][0]["Witnesses"][0]["Value"].join(" ");
@@ -38,11 +45,44 @@
   }
 }
 
+
+// skipToAnswer, answerNum, answer, <repeatPrevious...>, anyline{0,}
 start
-  = triplets:(triplet+) rest:$(skipToAnswer anyLine?) { return triplets.join("") + rest; }
+  = triplets:(triplet+) rest:$(skipToAnswer anyLine?)
+  {
+    var returnStr = "";
+
+    // loop over models
+    for(var i = 0; i < modelCounter; i++) {
+      returnStr += skippedParts[i];
+
+      // call clingo with answerset and all other answersets wrapped
+      var input = ["#const asCurrent = "+i, "#const asCount = "+modelCounter];
+      Array.prototype.push.apply(input, allAnswerSets[i]);
+      Array.prototype.push.apply(input, wrappedAnswerSets);
+      console.log('inputting',input);
+      // arr.concat(barr) creates a new array
+      //var input = allAnswerSets[i].concat(wrappedAnswerSets).concat(modelConsts);
+      returnStr += clingoCall(input);
+    }
+
+    // add last bit of text
+    returnStr += rest;
+
+    return returnStr;
+  }
 
 triplet
-  = a:skipToAnswer b:answerNumLineNl c:answersetLineNl { return a + b + c; }
+  = a:skipToAnswer b:answerNumLineNl c:answersetLine "\n"
+  {
+    skippedParts.push(a + b);
+    allAnswerSets.push(c);
+    // wrap all terms and push them to wrappedAnswerSets
+    for(idx in c) {
+      wrappedAnswerSets.push( '_as(' + c[idx] + ',' + (modelCounter+1) + ')' );
+    }
+    modelCounter = modelCounter + 1;
+  }
 
 skipToAnswer
   = skipped:$((!("Answer: ") anyLineNl)*) { return skipped; }
@@ -50,62 +90,89 @@ skipToAnswer
 answerNumLineNl "answer number line"
   = line:$("Answer: " num:posinteger "\n") {return line;}
 
-answersetLineNl "answer set line"
-  = first:predicate rest:(S+ predicate)* "\n"
-  { var facts = buildList(first, rest, 1);
-    return clingoCall(facts); }
-  / E* "\n" { return "\n"; }
+answersetLine "answer set line"
+  = E* first:term? rest:(E+ term)* E*
+  { return buildList(first, rest, 1); }
+  / E* { return []; } // TODO: necessary?
 
 anyLine
   = all:$([^\n]*) { return all; }
-  
+
 anyLineNl
   = all:$(anyLine "\n") { return all; }
 
+term // tuple is not allowed
+  = predicate
+  / atom:predicateIdent
+  / string:aspstring
+  / num:number
 
 /* a single predicate */
 
 predicate "predicate"
-  = $(ident "(" arguments ")")
+  = $(predicateIdent "(" arguments ")")
 
 // must have at least 1 argument (no empty predicates or tuples)
 arguments
-  = first:argument rest:("," S* argument)*
+  = first:argument rest:("," E* argument)*
 
+// tuples OK
 argument
-  = pred:$(predicate) { return pred; }
-  / tag:$(ident)      { return tag; }
-  / num:$(posinteger) { return num; }
+  = predicate
+  / atom:predicateIdent
+  / tuple:anontuple
+  / string:aspstring
+  / num:number
+
+/* tuples */
+
+anontuple
+  = "(" E* first:argument rest:("," E* argument)* E* ")"
+
+/* ASP strings */
+
+aspstring "double quoted string"
+  = "\"" str:string "\""
 
 /* numbers */
 
 posinteger "positive integer"
   = digits:[0-9]+
 
-// digits:("-"? [0-9]+) doesn't work for some reason, pegjs bug?
 integer "integer"
   = sign:"-"? digits:([0-9]+)
 
+decimal "decimal"
+  = sign:"-"? float:$(characteristic:[0-9]+ "." decimal:[0-9]+)
+
+number "number"
+  = decimal
+  / integer
+
 /* characters & strings */
 
+// not " or newline related characters
+string "string"
+  = str:([^\"\r\n\f]+)
+
 // prefix allows default negation e.g. '-predicate(X,Y)'
-ident "identifier"
-  = $("-"? identStart identChar*)
+predicateIdent "predicate identifier"
+  = prefix:$"-"? start:predicateIdentStart chars:predicateIdentChar*
 
 // allow "_" on the start of idents, since heuristic predicates might be present in the output
-identStart
+predicateIdentStart
   = [_a-z]i
   / nonascii
 
-identChar
+predicateIdentChar
   = [_a-z0-9-]i
   / nonascii
 
 nonascii
   = [\x80-\uFFFF]
 
-E "space or tab"
-  = [ \t\f]
+E "tab or space"
+  = [ \t]
 
 S "whitespace"
   = [ \t\r\n\f]
